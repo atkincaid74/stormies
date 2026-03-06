@@ -234,9 +234,12 @@ export function useExtensionMessages(
           return { ...prev, [id]: status }
         })
         os.setAgentActive(id, status === 'active')
-        if (status === 'waiting') {
+        if (status === 'active') {
+          os.moveToZone(id, 'work')
+        } else if (status === 'waiting') {
           os.triggerCelebration(id)
           os.showWaitingBubble(id)
+          os.moveToZone(id, 'idle')
           playDoneSound()
         }
       } else if (msg.type === 'agentThinking') {
@@ -254,6 +257,7 @@ export function useExtensionMessages(
           }
         })
         os.showPermissionBubble(id)
+        os.moveToZone(id, 'waiting')
       } else if (msg.type === 'subagentToolPermission') {
         const id = msg.id as number
         const parentToolId = msg.parentToolId as string
@@ -275,6 +279,7 @@ export function useExtensionMessages(
           }
         })
         os.clearPermissionBubble(id)
+        os.moveToZone(id, 'work')
         // Also clear permission bubbles on all sub-agent characters of this parent
         for (const [subId, meta] of os.subagentMeta) {
           if (meta.parentAgentId === id) {

@@ -53,10 +53,35 @@ export class OfficeState {
   constructor(layout?: OfficeLayout) {
     this.layout = layout || createDefaultLayout()
     this.tileMap = layoutToTileMap(this.layout)
-    this.seats = layoutToSeats(this.layout.furniture)
+    this.seats = layoutToSeats(this.layout.furniture, this.layout.cols)
     this.blockedTiles = getBlockedTiles(this.layout.furniture)
     this.furniture = layoutToFurnitureInstances(this.layout.furniture)
     this.walkableTiles = getWalkableTiles(this.tileMap, this.blockedTiles)
+  }
+
+  /** Find a free seat in a specific zone, or fall back to any free seat */
+  findFreeSeatInZone(zone: import('../types.js').SeatZone): string | null {
+    // First try the requested zone
+    for (const [uid, seat] of this.seats) {
+      if (!seat.assigned && seat.zone === zone) return uid
+    }
+    // Fall back to any free seat
+    return this.findFreeSeat()
+  }
+
+  /** Move an agent to a seat in the appropriate zone based on their status */
+  moveToZone(agentId: number, zone: import('../types.js').SeatZone): void {
+    const ch = this.characters.get(agentId)
+    if (!ch || ch.isSubagent) return
+    // Already in the right zone?
+    if (ch.seatId) {
+      const currentSeat = this.seats.get(ch.seatId)
+      if (currentSeat?.zone === zone) return
+    }
+    const newSeatId = this.findFreeSeatInZone(zone)
+    if (newSeatId && newSeatId !== ch.seatId) {
+      this.reassignSeat(agentId, newSeatId)
+    }
   }
 
   /** Rebuild all derived state from a new layout. Reassigns existing characters.

@@ -66,6 +66,8 @@ export type Direction = (typeof Direction)[keyof typeof Direction]
 /** 2D array of hex color strings (or '' for transparent). [row][col] */
 export type SpriteData = string[][]
 
+export type SeatZone = 'work' | 'waiting' | 'idle'
+
 export interface Seat {
   /** Chair furniture uid */
   uid: string
@@ -76,6 +78,8 @@ export interface Seat {
   /** Direction character faces when sitting (toward adjacent desk) */
   facingDir: Direction
   assigned: boolean
+  /** Which room zone this seat belongs to */
+  zone: SeatZone
 }
 
 export interface FurnitureInstance {
